@@ -9,6 +9,8 @@ import java.awt.event.ActionListener;
 public class MainWindow implements Window {
 	private JFrame frame;
 	private JPanel panel;
+	private String[] titles = {"List"};
+	private JList list;
 
 	public MainWindow(String name, int width, int height) {
 		init(name, width, height);
@@ -27,6 +29,12 @@ public class MainWindow implements Window {
 		add.addActionListener(actionListener);
 	}
 
+	public void setList() {
+		list = new JList(titles);
+		list.setBounds(10, 50, 150, 500);
+		panel.add(list);
+	}
+
 	@Override
 	public void setPanel() {
 		panel = new JPanel();
@@ -41,6 +49,7 @@ public class MainWindow implements Window {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setPanel();
 		setButton();
+		setList();
 		frame.add(panel);
 		frame.pack();
 		frame.setResizable(false);
