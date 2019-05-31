@@ -8,38 +8,65 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.*;
+import java.util.ArrayList;
 
 public class MainWindow implements Window {
 	private JFrame frame;
 	private JPanel panel;
-	private String[] titles = {"List"};
+	private String[] files;
 	private JList list;
+	private JTextArea area;
+	private Field text;
 
 	public MainWindow(String name, int width, int height) {
 		init(name, width, height);
 	}
+	
+	public void getFileTxt() {
+		String path = System.getProperty("user.dir");
+		File folder = new File(path);
+		files = folder.list(new FilenameFilter() {
+			@Override public boolean accept(File folder, String name) {
+				return name.endsWith(".txt");
+			}
+		});
+	}
 
 	@Override
 	public void setButton() {
-		Button add = new Button(10,10,75,25,"Add");
+		Button add = new Button(10,10,75,25,"Save");
 		panel.add(add);
+		save(add);
+	}
+
+	public void save(Button add) {
 		ActionListener actionListener = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				NoteWindow nw = new NoteWindow("Add Note - NameLess", 400, 600);
+				String title = text.getText();
+				String text = area.getText();
+				try {
+					FileWriter writer = new FileWriter(title + ".txt");
+					writer.write(text);
+					writer.flush();
+					writer.close();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
 			}
 		};
 		add.addActionListener(actionListener);
 	}
 
 	public void setList() {
-		list = new JList(titles);
+		list = new JList(files);
 		list.setBounds(10, 50, 125, 500);
 		panel.add(list);
 	}
 
 	public void setTextArea() {
-		JTextArea area = new JTextArea();
+		area = new JTextArea();
 		area.setText("Your Note");
 		area.setFont(new Font("Dialog", Font.PLAIN, 14));
 		area.setTabSize(10);
@@ -48,7 +75,7 @@ public class MainWindow implements Window {
 	}
 
 	public void setTitleField() {
-		Field text = new Field(150, 50, 325, 25);
+		text = new Field(150, 50, 325, 25);
 		text.setText("Untitled");
 		panel.add(text);
 
@@ -85,6 +112,7 @@ public class MainWindow implements Window {
 		frame = new JFrame(name);
 		frame.setPreferredSize(new Dimension(width, height));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		getFileTxt();
 		setPanel();
 		setButton();
 		setList();
