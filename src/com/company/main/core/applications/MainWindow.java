@@ -5,21 +5,26 @@ import com.company.main.core.elements.Field;
 import com.company.main.core.elements.Label;
 
 import javax.swing.*;
+import javax.swing.border.LineBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.util.ArrayList;
+import java.util.Scanner;
 
-public class MainWindow implements Window {
+public class MainWindow extends Thread implements Window {
 	private JFrame frame;
 	private JPanel panel;
 	private String[] files;
 	private JList list;
 	private JTextArea area;
 	private Field text;
+	private Label main;
+	private String name = "Untitled";
 
-	public MainWindow(String name, int width, int height) {
+	public MainWindow(int width, int height) {
 		init(name, width, height);
 	}
 	
@@ -31,19 +36,65 @@ public class MainWindow implements Window {
 				return name.endsWith(".txt");
 			}
 		});
+		deleteFormatTxt();
+	}
+
+	public void deleteFormatTxt() {
+		String format = ".txt";
+		for (int i = 0; i < files.length; i++) {
+			StringBuffer buffer = new StringBuffer(files[i]);
+			files[i] = buffer.delete(buffer.length() - format.length(), buffer.length()).toString();
+		}
 	}
 
 	@Override
 	public void setButton() {
-		Button add = new Button(10,10,75,25,"Save");
+		Button add = new Button(10, 10, 75,25,"Add");
 		panel.add(add);
-		save(add);
+		add(add);
+
+		Button save = new Button(100,10,75,25,"Save");
+		panel.add(save);
+		save(save);
+
+		Button delete = new Button(190
+				, 10, 75, 25, "Delete");
+		panel.add(delete);
+		delete(delete);
 	}
 
-	public void save(Button add) {
+	public void add(Button add) {
 		ActionListener actionListener = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				text.setText("Untitled");
+				area.setText("");
+				main.setText("Created");
+			}
+		};
+		add.addActionListener(actionListener);
+	}
+
+	public void  delete(Button delete) {
+		ActionListener actionListener = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.gc();
+				String title = text.getText();
+				File file = new File(title + ".txt");
+				if (file.delete())
+					updateList();
+					main.setText("Deleted");
+			}
+		};
+		delete.addActionListener(actionListener);
+	}
+
+	public void save(Button save) {
+		ActionListener actionListener = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.gc();
 				String title = text.getText();
 				String text = area.getText();
 				try {
@@ -54,22 +105,76 @@ public class MainWindow implements Window {
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
+				updateList();
+				main.setText("Saved");
 			}
 		};
-		add.addActionListener(actionListener);
+		save.addActionListener(actionListener);
+	}
+
+	public void updateList() {
+		getFileTxt();
+		DefaultListModel model = new DefaultListModel();
+		for (int i = 0; i < files.length; i++) {
+			model.add(i, files[i]);
+		}
+		list.setModel(model);
 	}
 
 	public void setList() {
 		list = new JList(files);
 		list.setBounds(10, 50, 125, 500);
+		list.setBorder(new LineBorder(Color.BLACK));
+		getIndexList();
 		panel.add(list);
+	}
+
+	public void getIndexList() {
+		ListSelectionListener listSelectionListener = new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent listSelectionEvent) {
+				if (files.length > 0) {
+					System.gc();
+					String title = files[list.getSelectedIndex()];
+					name = title;
+					changeTitle(name);
+					setTitle(title);
+					try {
+						setText(title);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		};
+		list.addListSelectionListener(listSelectionListener);
+	}
+
+	public void setTitle(String title) {
+		text.setText(title);
+	}
+
+	public void setText(String title) throws IOException {
+		File file = new File(title + ".txt");
+		String txt = "";
+		Scanner sc = new Scanner(file);
+		while (sc.hasNextLine()) {
+			txt += sc.nextLine() + "\n";
+		}
+		area.setText(txt);
+	}
+
+	public void replaceTxt(String title) {
+		String[] array = title.split(".");
+		text.setText(title);
 	}
 
 	public void setTextArea() {
 		area = new JTextArea();
-		area.setText("Your Note");
 		area.setFont(new Font("Dialog", Font.PLAIN, 14));
+		area.setBorder(new LineBorder(Color.BLACK));
 		area.setTabSize(10);
+		area.setLineWrap(true);
+		area.setWrapStyleWord(true);
 		area.setBounds(150, 90,325,460);
 		panel.add(area);
 	}
@@ -79,25 +184,15 @@ public class MainWindow implements Window {
 		text.setText("Untitled");
 		panel.add(text);
 
-		Field h = new Field(175, 560, 30, 20);
-		panel.add(h);
-
-		Field m = new Field(243, 560, 30, 20);
-		panel.add(m);
-
-		Field s = new Field(308, 560, 30, 20);
-		panel.add(s);
 	}
 
 	public void setLabel() {
-		Label h = new Label(150, 560, "H:");
-		panel.add(h);
+		Label status = new Label(280, 15, "Status: ");
+		panel.add(status);
 
-		Label m = new Label(215, 560, "M:");
-		panel.add(m);
+		main = new Label(330, 15, "None");
+		panel.add(main);
 
-		Label s = new Label(283, 560, "S:");
-		panel.add(s);
 	}
 
 	@Override
@@ -106,15 +201,19 @@ public class MainWindow implements Window {
 		panel.setLayout(null);
 	}
 
+	public void changeTitle(String name) {
+		frame.setTitle("NameLess NoteBook - " + name);
+	}
+
 	@Override
 	public void init(String name, Integer width, Integer height) {
 		setDecoration();
-		frame = new JFrame(name);
+		frame = new JFrame("NameLess NoteBook - " + name);
 		frame.setPreferredSize(new Dimension(width, height));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		getFileTxt();
 		setPanel();
 		setButton();
+		getFileTxt();
 		setList();
 		setTextArea();
 		setTitleField();

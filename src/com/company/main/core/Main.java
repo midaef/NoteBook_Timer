@@ -5,6 +5,6 @@ import com.company.main.core.applications.MainWindow;
 public class Main {
 
     public static void main(String[] args) {
-    	MainWindow wd = new MainWindow("NoteBook Timer - NameLess", 500,650);
+    	MainWindow wd = new MainWindow(500,600);
     }
 }
